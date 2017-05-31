@@ -7,7 +7,7 @@ import { AppService } from './app.service';
   styleUrls: [ './app.component.css' ]
 })
 export class AppComponent implements AfterViewInit {
-  title = 'Angular2 Electron';
+  title = 'Angular2 Electron with Typescript';
 
   public result: string;
   public faces;
@@ -48,9 +48,8 @@ export class AppComponent implements AfterViewInit {
     return new Blob([ u8arr ], { type: 'application/octet-stream' });
   }
 
-  test = () => {
+  takePhoto = () => {
     const option = {
-      title: 'test2',
       body: ''
     };
 
@@ -77,8 +76,6 @@ export class AppComponent implements AfterViewInit {
         this.ctx.strokeStyle = '#FF0000';
         this.ctx.strokeRect(640 - parseInt(faceRect[ 'left' ], 0) - parseInt(faceRect['width'], 0) , faceRect[ 'top' ],
           faceRect[ 'width' ], faceRect[ 'height' ]);
-        // this.gender = face['gender'];
-        // this.age = face['age'];
       }
       if (n > 0) {
         option.body = n + '명이 감지되었습니다';
@@ -86,16 +83,13 @@ export class AppComponent implements AfterViewInit {
         option.body = '얼굴을 감지하지 못하였습니다.';
       }
 
-      new Notification('test', option);
+      new Notification('Angular Electron', option);
     });
 
     this.appService.emotionRequest(emotionURL, blob).subscribe((data) => {
       const resultJson = JSON.parse(data[ '_body' ]);
       console.log('success');
       console.log(resultJson);
-
-
-
     });
   }
 }
