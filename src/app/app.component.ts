@@ -1,43 +1,50 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, ViewChild } from '@angular/core';
 import { AppService } from './app.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: [ './app.component.css' ]
+  styleUrls: ['./app.component.css']
 })
+
 export class AppComponent implements AfterViewInit {
-  title = 'Angular2 Electron with Typescript';
+  private title = 'Electron with Angular2';
+  private subTitle = 'This app was made for Electron Angular Example';
 
-  public result: string;
-  public faces;
-  public gender = 'gender';
-  public age: 'age';
-
-  private video;
-  private canvas;
+  @ViewChild('camera') video;
+  @ViewChild('myCanvas') canvas;
   private ctx;
 
-  constructor(private appService: AppService) {
+  private description;
+  private faces;
 
-  }
+  constructor(private appService: AppService) {}
 
   ngAfterViewInit() {
-    this.canvas = document.getElementById('mycanvas');
-    this.ctx = this.canvas.getContext('2d');
-    this.ctx.translate(this.canvas.width, 0);
+    const _video = this.video.nativeElement;
+    const _canvas = this.canvas.nativeElement;
+
+    // ctx 초기화
+    this.ctx = _canvas.getContext('2d');
+
+    // ctx 좌우 반전
+    this.ctx.translate(_canvas.width, 0);
     this.ctx.scale(-1, 1);
-    navigator.getUserMedia({ video: true, audio: false },
+
+    navigator.getUserMedia({video: true, audio: false},
       (stream) => {
-        this.video = document.getElementById('camera');
-        this.video.srcObject = stream;
+        // this.video = document.getElementById('camera');
+        // this.video.srcObject = stream;
+        _video.srcObject = stream;
+
       },
-      function (error) {
+      (error) => {
+        console.log('Error' + error);
       }
-    )
+    );
   }
 
-  dataURLtoBlob(dataurl) {
+  dataURLtoBlob = (dataurl) => {
     const arr = dataurl.split(','), mime = arr[ 0 ].match(/:(.*?);/)[ 1 ];
     const bstr = atob(arr[ 1 ]);
     let n = bstr.length;
@@ -49,47 +56,52 @@ export class AppComponent implements AfterViewInit {
   }
 
   takePhoto = () => {
-    const option = {
-      body: ''
-    };
+    const _video = this.video.nativeElement;
+    const _canvas = this.canvas.nativeElement;
 
-    this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-    const imgData = this.canvas.toDataURL('image/jpeg', 1.0);
+    this.ctx.drawImage(_video, 0, 0, _canvas.width, _canvas.height);
+    new Notification('캡쳐 완료', {body: '캡쳐가 완료되었습니다.'});
+
+    // canvas의 바이너리를 blob으로 변환
+    const imgData = _canvas.toDataURL('image/jpeg', 1.0);
     const blob = this.dataURLtoBlob(imgData);
-    console.log(blob);
-    const cognitiveURL = 'https://api.projectoxford.ai/vision/v1.0/analyze?visualFeatures=Description,Faces&language=en';
+
+    const faceURL = 'https://api.projectoxford.ai/vision/v1.0/analyze?visualFeatures=Description,Faces&language=en';
     const emotionURL = 'https://westus.api.cognitive.microsoft.com/emotion/v1.0/recognize';
 
-    this.appService.postRequest(cognitiveURL, blob).subscribe((data) => {
-      let n = 0;
-      console.log('success');
-      const resultJson = JSON.parse(data[ '_body' ]);
+    const faceKey = 'c8a88151c9c84934aef42a17c161eb5f';
+    const emotionKey = 'c73ae0c7b3054f2e9578c20630e76ef3';
+
+    this.appService.postRequest(faceURL, faceKey, blob).subscribe((data) => {
+      const resultJson = JSON.parse(data['_body']);
       console.log(resultJson);
-      for (const caption of resultJson['description']['captions']){
-        this.result = caption.text;
-      }
       this.faces = resultJson['faces'];
-      n = resultJson['faces'].length;
-      for (const face of resultJson[ 'faces' ]) {
-        console.log(face);
-        const faceRect = face[ 'faceRectangle' ];
+
+      this.description = resultJson['description']['captions'][0]['text'];
+      for (const face of resultJson['faces']) {
+        const faceRect = face['faceRectangle'];
         this.ctx.strokeStyle = '#FF0000';
         this.ctx.strokeRect(640 - parseInt(faceRect[ 'left' ], 0) - parseInt(faceRect['width'], 0) , faceRect[ 'top' ],
           faceRect[ 'width' ], faceRect[ 'height' ]);
       }
-      if (n > 0) {
-        option.body = n + '명이 감지되었습니다';
-      } else {
-        option.body = '얼굴을 감지하지 못하였습니다.';
+
+      const n = resultJson['faces'].length;
+      if(n > 0){
+        new Notification('얼굴 인식 완료', {body: n + '명의 얼굴을 표시하였습니다.'});
+      }
+      else {
+        new Notification('얼굴 인식 실패', {body: '얼굴을 찾지 못하였습니다.'});
       }
 
-      new Notification('Angular Electron', option);
     });
 
-    this.appService.emotionRequest(emotionURL, blob).subscribe((data) => {
-      const resultJson = JSON.parse(data[ '_body' ]);
-      console.log('success');
+    this.appService.postRequest(emotionURL, emotionKey, blob).subscribe((data) => {
+      const resultJson = JSON.parse(data['_body']);
       console.log(resultJson);
     });
+  }
+
+  clickFunction = () => {
+    alert('Click!');
   }
 }

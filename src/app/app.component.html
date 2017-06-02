@@ -1,28 +1,24 @@
-
-
 <div class="ui container">
   <h2 class="ui center aligned icon header">
     <img class="ui image" src="./assets/img/electron_icon.png">
     <div class="content">
       {{title}}
-      <div class="sub header">This app was made for typescript example</div>
+      <div class="sub header">{{subTitle}}</div>
     </div>
   </h2>
-  <video id="camera" class="ui fluid" autoplay> </video>
+  <video #camera class="ui fluid" autoplay> </video>
   <div>
-    <button id="btn_photo" class="ui button" (click)="takePhoto()">
+    <button id="btn_photo" class="ui fluid button" (click)="takePhoto()">
       <i class="icon photo"></i>
       Take a Photo!
     </button>
   </div>
-  <canvas id="mycanvas" width="640" height="480"></canvas>
-  <h3 class="ui center aligned header">{{result}}</h3>
+  <canvas #myCanvas class="ui fluid" width="640" height="480"></canvas>
+  <h3 class="ui center aligned header">{{description}}</h3>
   <div class="ui fluid card" *ngFor="let face of faces">
     <div class="content">
       <div class="header">{{face['gender']}}</div>
       <div class="meta">{{face['age']}}</div>
-
     </div>
   </div>
 </div>
-
